@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Favorite Shares{% endblock %}
+{% block content %}
+<h2>My Favorite Shares</h2>
+<form method="GET" action="{{ url_for('favorites') }}">
+  <div class="form-group">
+    <input type="text" class="form-control" name="search" placeholder="Search favorites...">
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+<br>
+<table class="table table-striped">
+  <thead>
+     <tr>
+        <th>Symbol</th>
+        <th>Name</th>
+        <th>Current Price (Rs)</th>
+        <th>Action</th>
+     </tr>
+  </thead>
+  <tbody>
+  {% for fav in favorites %}
+     <tr>
+        <td><a href="{{ url_for('share', symbol=fav.stock_symbol) }}">{{ fav.stock_symbol }}</a></td>
+        <td>{{ fav.name }}</td>
+        <td>{{ fav.price }}</td>
+        <td>
+         <a href="{{ url_for('remove_favorite', symbol=fav.stock_symbol) }}" class="btn btn-danger btn-sm">Remove</a>
+        </td>
+     </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h3>Add New Favorite</h3>
+<form method="POST" action="{{ url_for('add_favorite_post') }}">
+  <div class="form-group">
+    <input type="text" class="form-control" name="symbol" placeholder="Enter share symbol (e.g. RELIANCE.NS)" required>
+  </div>
+  <button type="submit" class="btn btn-success">Add to Favorites</button>
+</form>
+{% endblock %}
