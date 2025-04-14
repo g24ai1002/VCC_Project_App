@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Welcome {{ current_user.username }}</h1>
+    <h2>Your Favorite Stocks</h2>
+    <ul>
+        {% for stock in stocks %}
+            <li>{{ stock.name }} ({{ stock.symbol }}) - {{ stock.price }}
+                <a href="{{ url_for('remove_favorite', symbol=stock.symbol) }}">Remove</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Add a New Stock</h2>
+    <form action="/add_favorite/{{ stock_symbol }}" method="POST">
+        <input type="text" name="stock_symbol" placeholder="Enter Stock Symbol" required>
+        <input type="submit" value="Add to Favorites">
+    </form>
+</body>
+</html>
