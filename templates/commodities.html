@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}All Commodities{% endblock %}
+{% block content %}
+<h2>All Commodities</h2>
+<table class="table table-striped">
+  <thead>
+     <tr>
+        <th>Symbol</th>
+        <th>Name</th>
+        <th>Current Price (Rs)</th>
+        <th>Action</th>
+     </tr>
+  </thead>
+  <tbody>
+  {% for commodity in commodities %}
+     <tr>
+        <td><a href="{{ url_for('share', symbol=commodity.symbol) }}">{{ commodity.symbol }}</a></td>
+        <td>{{ commodity.name }}</td>
+        <td>{{ commodity.price }}</td>
+        <td>
+         <a href="{{ url_for('add_favorite_post') }}?symbol={{ commodity.symbol }}" class="btn btn-success btn-sm">Add Favorite</a>
+        </td>
+     </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
