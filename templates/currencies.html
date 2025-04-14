@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}All Currencies{% endblock %}
+{% block content %}
+<h2>All Currencies</h2>
+<table class="table table-striped">
+  <thead>
+     <tr>
+        <th>Symbol</th>
+        <th>Name</th>
+        <th>Current Rate (Rs)</th>
+        <th>Action</th>
+     </tr>
+  </thead>
+  <tbody>
+  {% for currency in currencies %}
+     <tr>
+        <td><a href="{{ url_for('share', symbol=currency.symbol) }}">{{ currency.symbol }}</a></td>
+        <td>{{ currency.name }}</td>
+        <td>{{ currency.price }}</td>
+        <td>
+         <a href="{{ url_for('add_favorite_post') }}?symbol={{ currency.symbol }}" class="btn btn-success btn-sm">Add Favorite</a>
+        </td>
+     </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
