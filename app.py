@@ -6,4 +6,4 @@ def hello():
     return "Hello from GitHub on GCP!"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='34.44.99.98', port=5000)
