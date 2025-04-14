@@ -1,5 +1,0 @@
-Flask==2.1.1
-Flask-SQLAlchemy==2.5.1
-Flask-Login==0.5.1
-yfinance==0.1.74
-Werkzeug==2.1.2
