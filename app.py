@@ -102,4 +102,4 @@ def remove_favorite(symbol):
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
-    app.run(host='34.44.99.98', port=5000)
+    app.run(host='104.198.24.232', port=5000)
