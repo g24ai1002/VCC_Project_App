@@ -1,30 +1,7 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
+  padding-bottom: 70px; /* To prevent content from being hidden behind the fixed footer */
 }
 
-h1, h2 {
-    color: #333;
-}
-
-form {
-    margin: 20px 0;
-}
-
-input[type="text"], input[type="password"] {
-    padding: 10px;
-    margin: 10px 0;
-    width: 200px;
-}
-
-input[type="submit"] {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-input[type="submit"]:hover {
-    background-color: #45a049;
+.footer {
+  padding: 10px;
 }
