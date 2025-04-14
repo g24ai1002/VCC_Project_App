@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="display-4 text-primary"><i class="fas fa-chart-line me-3"></i>Indian Market Tracker</h1>
+    <p class="lead">Welcome to your personal financial market tracker for Indian stocks, commodities and currencies.</p>
+</div>
+
+<div class="row justify-content-center g-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 menu-card">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                <h3 class="card-title">My Favorite Shares</h3>
+                <p class="card-text">View and manage your favorite stocks, commodities and currencies.</p>
+                <a href="{{ url_for('favorites') }}" class="btn btn-primary mt-3">View Favorites</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 menu-card">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h3 class="card-title">All Shares</h3>
+                <p class="card-text">Browse and search all available Indian stocks on the market.</p>
+                <a href="{{ url_for('stocks') }}" class="btn btn-primary mt-3">View Stocks</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 menu-card">
+            <div class="card-body text-center">
+                <i class="fas fa-coins fa-3x text-warning mb-3"></i>
+                <h3 class="card-title">All Commodities</h3>
+                <p class="card-text">Track gold and silver prices in the market.</p>
+                <a href="{{ url_for('commodities') }}" class="btn btn-primary mt-3">View Commodities</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 menu-card">
+            <div class="card-body text-center">
+                <i class="fas fa-rupee-sign fa-3x text-info mb-3"></i>
+                <h3 class="card-title">All Currencies</h3>
+                <p class="card-text">Monitor exchange rates for major world currencies against the Indian Rupee.</p>
+                <a href="{{ url_for('currencies') }}" class="btn btn-primary mt-3">View Currencies</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 menu-card">
+            <div class="card-body text-center">
+                <i class="fas fa-wallet fa-3x text-danger mb-3"></i>
+                <h3 class="card-title">My Holdings</h3>
+                <p class="card-text">Track your investments and monitor your profit/loss in real-time.</p>
+                <a href="{{ url_for('holdings') }}" class="btn btn-primary mt-3">View Holdings</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
