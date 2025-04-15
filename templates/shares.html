@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}My Favorite Shares{% endblock %}
+{% block title %}All Shares{% endblock %}
 {% block content %}
-<h2>My Favorite Shares</h2>
-<form method="GET" action="{{ url_for('favorites') }}">
+<h2>All Shares</h2>
+<form method="GET" action="{{ url_for('shares') }}">
   <div class="form-group">
-    <input type="text" class="form-control" name="search" placeholder="Search favorites...">
+    <input type="text" class="form-control" name="search" placeholder="Search shares...">
   </div>
   <button type="submit" class="btn btn-primary">Search</button>
 </form>
@@ -19,23 +19,16 @@
      </tr>
   </thead>
   <tbody>
-  {% for fav in favorites %}
+  {% for share in shares %}
      <tr>
-        <td><a href="{{ url_for('share', symbol=fav.stock_symbol) }}">{{ fav.stock_symbol }}</a></td>
-        <td>{{ fav.name }}</td>
-        <td>{{ fav.price }}</td>
+        <td><a href="{{ url_for('share', symbol=share.symbol) }}">{{ share.symbol }}</a></td>
+        <td>{{ share.name }}</td>
+        <td>{{ share.price }}</td>
         <td>
-         <a href="{{ url_for('remove_favorite', symbol=fav.stock_symbol) }}" class="btn btn-danger btn-sm">Remove</a>
+         <a href="{{ url_for('share', symbol=share.symbol) }}" class="btn btn-info btn-sm">View Details</a>
         </td>
      </tr>
   {% endfor %}
   </tbody>
 </table>
-<h3>Add New Favorite</h3>
-<form method="POST" action="{{ url_for('add_favorite_post') }}">
-  <div class="form-group">
-    <input type="text" class="form-control" name="symbol" placeholder="Enter share symbol (e.g. RELIANCE.NS)" required>
-  </div>
-  <button type="submit" class="btn btn-success">Add to Favorites</button>
-</form>
 {% endblock %}
