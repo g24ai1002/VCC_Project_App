@@ -27,6 +27,25 @@ with app.app_context():
     models_db.create_all()
 
 # -------------------------------
+# Helper function for price retrieval
+def get_price(symbol):
+    """
+    Retrieve the price for a given symbol using fast_info first,
+    then fall back to the full info dictionary with multiple keys.
+    """
+    try:
+        ticker = yf.Ticker(symbol)
+        # Use fast_info to quickly get last price
+        fast_info = ticker.fast_info
+        price = fast_info.get('last_price')
+        if price is None:
+            info = ticker.info  # This is slower, so only call if needed.
+            price = info.get('regularMarketPrice') or info.get('currentPrice') or info.get('previousClose')
+        return price if price is not None else 'N/A'
+    except Exception:
+        return 'N/A'
+
+# -------------------------------
 # User loader for flask-login
 @login_manager.user_loader
 def load_user(user_id):
@@ -103,13 +122,13 @@ def favorites():
     for fav in favs:
         if search and search.lower() not in fav.stock_symbol.lower():
             continue
+        # Use helper function to retrieve the price
+        current_price = get_price(fav.stock_symbol)
         try:
             ticker = yf.Ticker(fav.stock_symbol)
             info = ticker.info
-            current_price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
             name = info.get('longName', fav.stock_symbol)
         except Exception:
-            current_price = 'N/A'
             name = fav.stock_symbol
         favorites_data.append({'stock_symbol': fav.stock_symbol, 'price': current_price, 'name': name})
     return render_template('favorites.html', favorites=favorites_data)
@@ -142,7 +161,6 @@ def remove_favorite(symbol):
 
 # -------------------------------
 # "All Shares" Route
-# Pre-defined list of top Indian shares.
 indian_shares = [
     {'symbol': 'RELIANCE.NS', 'name': 'Reliance Industries'},
     {'symbol': 'TCS.NS', 'name': 'Tata Consultancy Services'},
@@ -159,12 +177,7 @@ def shares():
     for share in indian_shares:
         if search and search.lower() not in share['name'].lower() and search.lower() not in share['symbol'].lower():
             continue
-        try:
-            ticker = yf.Ticker(share['symbol'])
-            info = ticker.info
-            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
-        except Exception:
-            price = 'N/A'
+        price = get_price(share['symbol'])
         shares_list.append({'symbol': share['symbol'], 'name': share['name'], 'price': price})
     return render_template('shares.html', shares=shares_list)
 
@@ -180,12 +193,7 @@ commodities_list = [
 def commodities():
     commodity_data = []
     for com in commodities_list:
-        try:
-            ticker = yf.Ticker(com['symbol'])
-            info = ticker.info
-            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
-        except Exception:
-            price = 'N/A'
+        price = get_price(com['symbol'])
         commodity_data.append({'symbol': com['symbol'], 'name': com['name'], 'price': price})
     return render_template('commodities.html', commodities=commodity_data)
 
@@ -205,12 +213,7 @@ currencies_list = [
 def currencies():
     currency_data = []
     for curr in currencies_list:
-        try:
-            ticker = yf.Ticker(curr['symbol'])
-            info = ticker.info
-            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
-        except Exception:
-            price = 'N/A'
+        price = get_price(curr['symbol'])
         currency_data.append({'symbol': curr['symbol'], 'name': curr['name'], 'price': price})
     return render_template('currencies.html', currencies=currency_data)
 
@@ -222,16 +225,11 @@ def holdings():
     user_holdings = Holding.query.filter_by(user_id=current_user.id).all()
     holdings_data = []
     for h in user_holdings:
-        try:
-            ticker = yf.Ticker(h.asset_symbol)
-            info = ticker.info
-            current_price = info.get('regularMarketPrice') or info.get('currentPrice', None)
-        except Exception:
-            current_price = 0
-        if current_price is None:
-            current_price = 0
-        profit_loss = (current_price - h.purchase_price) * h.quantity
-        profit_loss_pct = ((current_price - h.purchase_price) / h.purchase_price * 100) if h.purchase_price != 0 else 0
+        current_price = get_price(h.asset_symbol)
+        # Set to zero for calculation purposes if no price is found
+        calc_price = current_price if isinstance(current_price, (int, float)) else 0
+        profit_loss = (calc_price - h.purchase_price) * h.quantity
+        profit_loss_pct = ((calc_price - h.purchase_price) / h.purchase_price * 100) if h.purchase_price != 0 else 0
         holdings_data.append({
             'asset_symbol': h.asset_symbol,
             'asset_type': h.asset_type,
@@ -269,11 +267,15 @@ def add_holding():
 def share(symbol):
     try:
         ticker = yf.Ticker(symbol)
-        info = ticker.info
+        fast_info = ticker.fast_info
+        price = fast_info.get('last_price')
+        if price is None:
+            info = ticker.info
+            price = info.get('regularMarketPrice') or info.get('currentPrice') or info.get('previousClose', 'N/A')
         asset = {
             'symbol': symbol,
-            'name': info.get('longName', symbol),
-            'price': info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
+            'name': ticker.info.get('longName', symbol),
+            'price': price if price is not None else 'N/A'
         }
     except Exception:
         asset = {'symbol': symbol, 'name': symbol, 'price': 'N/A'}
@@ -297,7 +299,7 @@ def graph(symbol):
         buf.seek(0)
         plt.close(fig)
         return send_file(buf, mimetype='image/png')
-    except Exception as e:
+    except Exception:
         return "Error generating graph"
 
 # -------------------------------
