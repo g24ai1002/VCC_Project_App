@@ -1,0 +1,16 @@
+If the folder is already a Git repo, and you just want to pull latest changes:
+cd VCC_Project_App
+git pull origin main
+
+Activate virtual environment
+source venv/bin/activate
+
+Run database
+python3 init_db.py
+
+Run the app
+nohup flask run --host=0.0.0.0 --port=5000 &
+
+
+App Static Link -
+http://35.223.100.38:5000
