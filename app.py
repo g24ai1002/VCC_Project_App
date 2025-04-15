@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import yfinance as yf
@@ -7,7 +7,7 @@ import io
 import matplotlib.pyplot as plt
 
 # Initialize Flask app and configuration
-app = Flask(__name__)
+app = Flask(_name_)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database/app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -18,9 +18,8 @@ login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-# Import models from models.py (note: models.py defines db as well)
+# Import models from models.py
 from models import db as models_db, User, Favorite, Holding
-# Initialize models with our app
 models_db.init_app(app)
 
 # Create tables if they don’t already exist
@@ -107,7 +106,7 @@ def favorites():
         try:
             ticker = yf.Ticker(fav.stock_symbol)
             info = ticker.info
-            current_price = info.get('currentPrice', 'N/A')
+            current_price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
             name = info.get('longName', fav.stock_symbol)
         except Exception:
             current_price = 'N/A'
@@ -143,7 +142,7 @@ def remove_favorite(symbol):
 
 # -------------------------------
 # "All Shares" Route
-# Here we use a pre-defined list of top Indian shares.
+# Pre-defined list of top Indian shares.
 indian_shares = [
     {'symbol': 'RELIANCE.NS', 'name': 'Reliance Industries'},
     {'symbol': 'TCS.NS', 'name': 'Tata Consultancy Services'},
@@ -163,14 +162,14 @@ def shares():
         try:
             ticker = yf.Ticker(share['symbol'])
             info = ticker.info
-            price = info.get('currentPrice', 'N/A')
+            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
         except Exception:
             price = 'N/A'
         shares_list.append({'symbol': share['symbol'], 'name': share['name'], 'price': price})
     return render_template('shares.html', shares=shares_list)
 
 # -------------------------------
-# "All Commodities" Route – show Gold and Silver (using Indian ETF tickers)
+# "All Commodities" Route – show Gold and Silver ETFs
 commodities_list = [
     {'symbol': 'GOLDBEES.NS', 'name': 'Gold ETF'},
     {'symbol': 'SILVERBEE.NS', 'name': 'Silver ETF'}
@@ -184,14 +183,14 @@ def commodities():
         try:
             ticker = yf.Ticker(com['symbol'])
             info = ticker.info
-            price = info.get('currentPrice', 'N/A')
+            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
         except Exception:
             price = 'N/A'
         commodity_data.append({'symbol': com['symbol'], 'name': com['name'], 'price': price})
     return render_template('commodities.html', commodities=commodity_data)
 
 # -------------------------------
-# "All Currencies" Route – show Dollar and Top 5 Currencies as currency pairs (e.g., USDINR=X)
+# "All Currencies" Route – show Dollar and top currencies
 currencies_list = [
     {'symbol': 'USDINR=X', 'name': 'US Dollar'},
     {'symbol': 'EURINR=X', 'name': 'Euro'},
@@ -209,7 +208,7 @@ def currencies():
         try:
             ticker = yf.Ticker(curr['symbol'])
             info = ticker.info
-            price = info.get('regularMarketPrice', 'N/A')
+            price = info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
         except Exception:
             price = 'N/A'
         currency_data.append({'symbol': curr['symbol'], 'name': curr['name'], 'price': price})
@@ -226,9 +225,9 @@ def holdings():
         try:
             ticker = yf.Ticker(h.asset_symbol)
             info = ticker.info
-            current_price = info.get('currentPrice', None)
+            current_price = info.get('regularMarketPrice') or info.get('currentPrice', None)
         except Exception:
-            current_price = None
+            current_price = 0
         if current_price is None:
             current_price = 0
         profit_loss = (current_price - h.purchase_price) * h.quantity
@@ -251,15 +250,20 @@ def add_holding():
     asset_symbol = request.form.get('asset_symbol')
     quantity = float(request.form.get('quantity'))
     purchase_price = float(request.form.get('purchase_price'))
-    new_holding = Holding(asset_type=asset_type, asset_symbol=asset_symbol,
-                          quantity=quantity, purchase_price=purchase_price, user_id=current_user.id)
+    new_holding = Holding(
+        asset_type=asset_type,
+        asset_symbol=asset_symbol,
+        quantity=quantity,
+        purchase_price=purchase_price,
+        user_id=current_user.id
+    )
     db.session.add(new_holding)
     db.session.commit()
     flash('Holding added', 'success')
     return redirect(url_for('holdings'))
 
 # -------------------------------
-# "Share Page" Route – display detailed info and graph for an asset (share, commodity or currency)
+# "Share Page" Route – display detailed info and graph for an asset
 @app.route('/share/<symbol>')
 @login_required
 def share(symbol):
@@ -269,7 +273,7 @@ def share(symbol):
         asset = {
             'symbol': symbol,
             'name': info.get('longName', symbol),
-            'price': info.get('currentPrice', 'N/A')
+            'price': info.get('regularMarketPrice') or info.get('currentPrice', 'N/A')
         }
     except Exception:
         asset = {'symbol': symbol, 'name': symbol, 'price': 'N/A'}
@@ -306,5 +310,5 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------------
-if __name__ == '__main__':
+if _name_ == '_main_':
     app.run(host='0.0.0.0', port=5000)
