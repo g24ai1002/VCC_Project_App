@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -5,6 +6,10 @@ import yfinance as yf
 from werkzeug.security import generate_password_hash, check_password_hash
 import io
 import matplotlib.pyplot as plt
+
+# Set up error logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize Flask app and configuration
 app = Flask(__name__)
@@ -27,22 +32,24 @@ with app.app_context():
     models_db.create_all()
 
 # -------------------------------
-# Helper function for price retrieval
+# Helper function for price retrieval (used only on the detail page)
 def get_price(symbol):
     """
-    Retrieve the price for a given symbol using fast_info first,
-    then fall back to the full info dictionary with multiple keys.
+    Retrieve the latest price for a given symbol using fast_info first,
+    then falls back to the full info dictionary.
     """
     try:
         ticker = yf.Ticker(symbol)
-        # Use fast_info to quickly get last price
+        # Try using fast_info (this is usually faster)
         fast_info = ticker.fast_info
         price = fast_info.get('last_price')
         if price is None:
-            info = ticker.info  # This is slower, so only call if needed.
+            # Fall back to the detailed info
+            info = ticker.info
             price = info.get('regularMarketPrice') or info.get('currentPrice') or info.get('previousClose')
         return price if price is not None else 'N/A'
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error fetching price for {symbol}: {e}")
         return 'N/A'
 
 # -------------------------------
@@ -58,7 +65,8 @@ def inject_contact():
     try:
         with open('contact.txt', 'r') as f:
             contact = f.read()
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error reading contact.txt: {e}")
         contact = "Contact us at support@example.com"
     return dict(contact_info=contact)
 
@@ -112,7 +120,7 @@ def menu():
     return render_template('menu.html')
 
 # -------------------------------
-# "My Favorite Shares" Route with optional search
+# "My Favorite Shares" Route – no live price fetch; use placeholder text
 @app.route('/favorites', methods=['GET'])
 @login_required
 def favorites():
@@ -122,15 +130,11 @@ def favorites():
     for fav in favs:
         if search and search.lower() not in fav.stock_symbol.lower():
             continue
-        # Use helper function to retrieve the price
-        current_price = get_price(fav.stock_symbol)
-        try:
-            ticker = yf.Ticker(fav.stock_symbol)
-            info = ticker.info
-            name = info.get('longName', fav.stock_symbol)
-        except Exception:
-            name = fav.stock_symbol
-        favorites_data.append({'stock_symbol': fav.stock_symbol, 'price': current_price, 'name': name})
+        favorites_data.append({
+            'stock_symbol': fav.stock_symbol,
+            'name': fav.stock_symbol,  # Or store/display a longer name as desired
+            'price': "Click to view"
+        })
     return render_template('favorites.html', favorites=favorites_data)
 
 # Route to add a favorite via POST (from form submission)
@@ -160,7 +164,7 @@ def remove_favorite(symbol):
     return redirect(url_for('favorites'))
 
 # -------------------------------
-# "All Shares" Route
+# "All Shares" Route – list page without live price request
 indian_shares = [
     {'symbol': 'RELIANCE.NS', 'name': 'Reliance Industries'},
     {'symbol': 'TCS.NS', 'name': 'Tata Consultancy Services'},
@@ -177,12 +181,15 @@ def shares():
     for share in indian_shares:
         if search and search.lower() not in share['name'].lower() and search.lower() not in share['symbol'].lower():
             continue
-        price = get_price(share['symbol'])
-        shares_list.append({'symbol': share['symbol'], 'name': share['name'], 'price': price})
+        shares_list.append({
+            'symbol': share['symbol'],
+            'name': share['name'],
+            'price': "Click to view"
+        })
     return render_template('shares.html', shares=shares_list)
 
 # -------------------------------
-# "All Commodities" Route – show Gold and Silver ETFs
+# "All Commodities" Route – list page without live price fetch
 commodities_list = [
     {'symbol': 'GOLDBEES.NS', 'name': 'Gold ETF'},
     {'symbol': 'SILVERBEE.NS', 'name': 'Silver ETF'}
@@ -193,12 +200,15 @@ commodities_list = [
 def commodities():
     commodity_data = []
     for com in commodities_list:
-        price = get_price(com['symbol'])
-        commodity_data.append({'symbol': com['symbol'], 'name': com['name'], 'price': price})
+        commodity_data.append({
+            'symbol': com['symbol'],
+            'name': com['name'],
+            'price': "Click to view"
+        })
     return render_template('commodities.html', commodities=commodity_data)
 
 # -------------------------------
-# "All Currencies" Route – show Dollar and top currencies
+# "All Currencies" Route – list page without live price fetch
 currencies_list = [
     {'symbol': 'USDINR=X', 'name': 'US Dollar'},
     {'symbol': 'EURINR=X', 'name': 'Euro'},
@@ -213,12 +223,15 @@ currencies_list = [
 def currencies():
     currency_data = []
     for curr in currencies_list:
-        price = get_price(curr['symbol'])
-        currency_data.append({'symbol': curr['symbol'], 'name': curr['name'], 'price': price})
+        currency_data.append({
+            'symbol': curr['symbol'],
+            'name': curr['name'],
+            'price': "Click to view"
+        })
     return render_template('currencies.html', currencies=currency_data)
 
 # -------------------------------
-# "My Holdings" Route – display holdings and add new holding
+# "My Holdings" Route – Live price fetch for calculations (holdings are fewer in number)
 @app.route('/holdings', methods=['GET'])
 @login_required
 def holdings():
@@ -226,7 +239,6 @@ def holdings():
     holdings_data = []
     for h in user_holdings:
         current_price = get_price(h.asset_symbol)
-        # Set to zero for calculation purposes if no price is found
         calc_price = current_price if isinstance(current_price, (int, float)) else 0
         profit_loss = (calc_price - h.purchase_price) * h.quantity
         profit_loss_pct = ((calc_price - h.purchase_price) / h.purchase_price * 100) if h.purchase_price != 0 else 0
@@ -261,7 +273,7 @@ def add_holding():
     return redirect(url_for('holdings'))
 
 # -------------------------------
-# "Share Page" Route – display detailed info and graph for an asset
+# "Share Page" Route – live price fetch (only on detail view)
 @app.route('/share/<symbol>')
 @login_required
 def share(symbol):
@@ -277,7 +289,8 @@ def share(symbol):
             'name': ticker.info.get('longName', symbol),
             'price': price if price is not None else 'N/A'
         }
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error in share route for {symbol}: {e}")
         asset = {'symbol': symbol, 'name': symbol, 'price': 'N/A'}
     return render_template('share.html', asset=asset)
 
@@ -299,7 +312,8 @@ def graph(symbol):
         buf.seek(0)
         plt.close(fig)
         return send_file(buf, mimetype='image/png')
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error generating graph for {symbol}: {e}")
         return "Error generating graph"
 
 # -------------------------------
@@ -310,6 +324,13 @@ def logout():
     logout_user()
     flash('Logged out', 'success')
     return redirect(url_for('login'))
+
+# -------------------------------
+# Test Route for Quick Verification (no login required)
+@app.route('/test/<symbol>')
+def test(symbol):
+    price = get_price(symbol)
+    return f"<h1>Test Price for {symbol}</h1><p>Price: {price}</p>"
 
 # -------------------------------
 if __name__ == '__main__':
