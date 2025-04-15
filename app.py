@@ -310,6 +310,13 @@ def logout():
     logout_user()
     flash('Logged out', 'success')
     return redirect(url_for('login'))
+    
+# -------------------------------
+# Test Route
+@app.route('/test/<symbol>')
+def test(symbol):
+    price = get_price(symbol)
+    return render_template('test.html', symbol=symbol, price=price)
 
 # -------------------------------
 if __name__ == '__main__':
