@@ -7,8 +7,7 @@
      <tr>
         <th>Symbol</th>
         <th>Name</th>
-        <th>Current Price (Rs)</th>
-        <th>Action</th>
+        <th>Price</th>
      </tr>
   </thead>
   <tbody>
@@ -17,9 +16,6 @@
         <td><a href="{{ url_for('share', symbol=commodity.symbol) }}">{{ commodity.symbol }}</a></td>
         <td>{{ commodity.name }}</td>
         <td>{{ commodity.price }}</td>
-        <td>
-         <a href="{{ url_for('add_favorite_post') }}?symbol={{ commodity.symbol }}" class="btn btn-success btn-sm">Add Favorite</a>
-        </td>
      </tr>
   {% endfor %}
   </tbody>
